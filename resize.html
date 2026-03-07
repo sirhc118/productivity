@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이미지 리사이즈 — ToolKit</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0b;--sf:#141416;--sf2:#1c1c20;--bd:#2a2a30;--tx:#e8e8ec;--dim:#8888a0;--ac:#4af0c0;--acd:#4af0c020;--acm:#4af0c040;--red:#ff6b6b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.container{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:13px;margin-bottom:32px;transition:.2s;font-family:'Space Mono',monospace}
+.back:hover{color:var(--ac)}
+header{text-align:center;margin-bottom:48px}
+.logo{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--ac);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.logo::before,.logo::after{content:'';width:24px;height:1px;background:var(--ac);opacity:.4}
+h1{font-size:32px;font-weight:700;margin-bottom:10px}
+header p{color:var(--dim);font-size:15px;line-height:1.6}
+.badge{display:inline-block;margin-top:12px;padding:4px 14px;background:var(--acd);border:1px solid var(--acm);border-radius:20px;font-size:12px;color:var(--ac);font-family:'Space Mono',monospace}
+
+.dropzone{border:2px dashed var(--bd);border-radius:16px;padding:48px 32px;text-align:center;cursor:pointer;transition:.25s;position:relative;background:var(--sf)}
+.dropzone:hover,.dropzone.dragover{border-color:var(--ac);background:var(--acd)}
+.dropzone-icon{font-size:48px;margin-bottom:16px;display:block}
+.dropzone-text{font-size:15px;color:var(--dim);line-height:1.7}
+.dropzone-text strong{color:var(--ac)}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+.preview-section{margin-top:24px;display:none}
+.preview-section.show{display:block}
+.preview-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:20px;text-align:center}
+.preview-img{max-width:100%;max-height:320px;border-radius:8px;margin-bottom:12px;object-fit:contain}
+.preview-info{font-size:13px;color:var(--dim);font-family:'Space Mono',monospace}
+
+.options-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:24px;margin-top:20px}
+.options-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px}
+
+.size-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.size-input{display:flex;align-items:center;gap:8px}
+.size-input label{font-size:13px;color:var(--dim);min-width:32px}
+.size-input input[type=number]{width:120px;padding:10px 14px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-family:'Space Mono',monospace;font-size:14px;outline:none;transition:.2s}
+.size-input input[type=number]:focus{border-color:var(--ac)}
+.size-x{color:var(--dim);font-size:16px;font-weight:700}
+.lock-btn{padding:8px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--dim);cursor:pointer;font-size:16px;transition:.2s;line-height:1}
+.lock-btn.locked{border-color:var(--ac);color:var(--ac);background:var(--acd)}
+
+.preset-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.preset-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;transition:.2s}
+.preset-btn:hover{border-color:var(--ac);color:var(--ac)}
+.preset-btn.active{background:var(--acd);border-color:var(--ac);color:var(--ac)}
+
+.scale-row{display:flex;gap:8px;margin-top:16px;align-items:center;flex-wrap:wrap}
+.scale-row label{font-size:13px;color:var(--dim)}
+.scale-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:12px;font-family:'Space Mono',monospace;transition:.2s}
+.scale-btn:hover{border-color:var(--ac);color:var(--ac)}
+
+.format-row{display:flex;gap:8px;margin-top:20px;align-items:center;flex-wrap:wrap}
+.format-row .options-title{margin-bottom:0;margin-right:8px}
+.fmt-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:.2s}
+.fmt-btn:hover{border-color:var(--ac)}
+.fmt-btn.active{background:var(--acd);border-color:var(--ac);color:var(--ac)}
+
+.quality-row{margin-top:16px;display:flex;align-items:center;gap:12px}
+.quality-row.hide{display:none}
+.quality-row label{font-size:13px;color:var(--dim);white-space:nowrap}
+.quality-row input[type=range]{flex:1;accent-color:var(--ac)}
+.quality-row .q-val{font-family:'Space Mono',monospace;font-size:13px;color:var(--ac);min-width:36px}
+
+.action-bar{margin-top:28px;display:flex;gap:12px;align-items:center}
+.btn-primary{flex:1;padding:16px 32px;border:0;border-radius:12px;background:var(--ac);color:var(--bg);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px #4af0c035}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-clear{padding:16px 20px;border:1px solid var(--bd);border-radius:12px;background:0;color:var(--dim);cursor:pointer;font-size:14px;font-family:inherit;transition:.2s}
+.btn-clear:hover{border-color:var(--red);color:var(--red)}
+
+.result{margin-top:24px;padding:20px;background:#4af0c010;border:1px solid var(--acm);border-radius:14px;display:none}
+.result.show{display:block}
+.result-title{font-weight:700;font-size:15px;margin-bottom:8px}
+.result-stats{font-size:13px;color:var(--dim);margin-bottom:14px;line-height:1.6}
+.result-img{max-width:100%;max-height:280px;border-radius:8px;margin-bottom:14px;object-fit:contain}
+.btn-download{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;border:0;background:var(--ac);color:var(--bg);font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;text-decoration:none}
+.btn-download:hover{box-shadow:0 4px 16px #4af0c030}
+
+.status-msg{font-size:13px;color:var(--dim);margin-top:12px;min-height:20px}
+footer{text-align:center;margin-top:56px;padding-top:24px;border-top:1px solid var(--bd)}
+footer p{font-size:12px;color:var(--dim);line-height:1.8}
+@media(max-width:600px){h1{font-size:24px}.container{padding:24px 16px 60px}.size-row{flex-direction:column}.preset-row,.scale-row{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="index.html" class="back">← 도구 모음으로</a>
+
+<header>
+  <div class="logo">Image Resize</div>
+  <h1>이미지 리사이즈</h1>
+  <p>이미지 크기를 자유롭게 조절. 비율 잠금, 프리셋, 포맷 변환까지.</p>
+  <span class="badge">100% 클라이언트 사이드</span>
+</header>
+
+<div class="dropzone" id="drop">
+  <span class="dropzone-icon">📐</span>
+  <div class="dropzone-text">이미지를 드래그하거나 <strong>클릭하여 선택</strong></div>
+  <input type="file" accept="image/*" onchange="loadImage(this.files[0])">
+</div>
+
+<div class="preview-section" id="preview-section">
+  <div class="preview-card">
+    <img id="preview-img" class="preview-img">
+    <div class="preview-info" id="preview-info"></div>
+  </div>
+</div>
+
+<div class="options-card" id="options" style="display:none">
+  <div class="options-title">크기 설정</div>
+  <div class="size-row">
+    <div class="size-input">
+      <label>W</label>
+      <input type="number" id="w-input" min="1" max="10000" oninput="onWidthChange()">
+    </div>
+    <span class="size-x">×</span>
+    <div class="size-input">
+      <label>H</label>
+      <input type="number" id="h-input" min="1" max="10000" oninput="onHeightChange()">
+    </div>
+    <button class="lock-btn locked" id="lock-btn" onclick="toggleLock()" title="비율 잠금">🔒</button>
+  </div>
+
+  <div class="scale-row">
+    <label>배율</label>
+    <button class="scale-btn" onclick="applyScale(0.25)">25%</button>
+    <button class="scale-btn" onclick="applyScale(0.5)">50%</button>
+    <button class="scale-btn" onclick="applyScale(0.75)">75%</button>
+    <button class="scale-btn" onclick="applyScale(1)">100%</button>
+    <button class="scale-btn" onclick="applyScale(1.5)">150%</button>
+    <button class="scale-btn" onclick="applyScale(2)">200%</button>
+  </div>
+
+  <div class="preset-row">
+    <button class="preset-btn" onclick="applyPreset(1920,1080)">1920×1080</button>
+    <button class="preset-btn" onclick="applyPreset(1280,720)">1280×720</button>
+    <button class="preset-btn" onclick="applyPreset(1080,1080)">1080×1080</button>
+    <button class="preset-btn" onclick="applyPreset(800,600)">800×600</button>
+    <button class="preset-btn" onclick="applyPreset(512,512)">512×512</button>
+    <button class="preset-btn" onclick="applyPreset(256,256)">256×256</button>
+  </div>
+
+  <div class="format-row">
+    <span class="options-title" style="margin-bottom:0">포맷</span>
+    <button class="fmt-btn active" onclick="pickFmt(this,'jpeg')">JPG</button>
+    <button class="fmt-btn" onclick="pickFmt(this,'png')">PNG</button>
+    <button class="fmt-btn" onclick="pickFmt(this,'webp')">WebP</button>
+  </div>
+
+  <div class="quality-row" id="q-row">
+    <label>품질</label>
+    <input type="range" min="10" max="100" value="90" id="q-slider" oninput="document.getElementById('q-val').textContent=this.value+'%'">
+    <span class="q-val" id="q-val">90%</span>
+  </div>
+</div>
+
+<div class="status-msg" id="status"></div>
+<div class="action-bar" id="actions" style="display:none">
+  <button class="btn-primary" onclick="doResize()" id="resize-btn">📐 리사이즈</button>
+  <button class="btn-clear" onclick="clearAll()">초기화</button>
+</div>
+
+<div class="result" id="result"></div>
+
+<footer><p>모든 처리는 브라우저에서 이루어집니다 · Canvas API 기반</p></footer>
+</div>
+
+<script>
+let origImg=null, origW=0, origH=0, ratio=1, locked=true, targetFmt='jpeg';
+function $(id){return document.getElementById(id)}
+
+function loadImage(file){
+  if(!file||!file.type.startsWith('image/'))return;
+  const img=new Image();
+  img.onload=()=>{
+    origImg=img; origW=img.naturalWidth; origH=img.naturalHeight; ratio=origW/origH;
+    $('preview-img').src=img.src;
+    $('preview-info').textContent=`${origW} × ${origH} px · ${fmtBytes(file.size)} · ${file.type.split('/')[1].toUpperCase()}`;
+    $('preview-section').classList.add('show');
+    $('w-input').value=origW; $('h-input').value=origH;
+    $('options').style.display='block'; $('actions').style.display='flex';
+    $('result').classList.remove('show');
+  };
+  img.src=URL.createObjectURL(file);
+}
+
+function onWidthChange(){
+  const w=parseInt($('w-input').value);
+  if(locked&&w>0)$('h-input').value=Math.round(w/ratio);
+}
+function onHeightChange(){
+  const h=parseInt($('h-input').value);
+  if(locked&&h>0)$('w-input').value=Math.round(h*ratio);
+}
+
+function toggleLock(){
+  locked=!locked;
+  const btn=$('lock-btn');
+  btn.textContent=locked?'🔒':'🔓';
+  btn.classList.toggle('locked',locked);
+  if(locked){ratio=parseInt($('w-input').value)/parseInt($('h-input').value)}
+}
+
+function applyScale(s){
+  $('w-input').value=Math.round(origW*s);
+  $('h-input').value=Math.round(origH*s);
+  if(locked)ratio=origW/origH;
+}
+
+function applyPreset(w,h){
+  $('w-input').value=w; $('h-input').value=h;
+  if(locked)ratio=w/h;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function pickFmt(btn,fmt){
+  targetFmt=fmt;
+  document.querySelectorAll('.fmt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  $('q-row').classList.toggle('hide',fmt==='png');
+}
+
+function doResize(){
+  if(!origImg)return;
+  const w=parseInt($('w-input').value), h=parseInt($('h-input').value);
+  if(!w||!h||w<1||h<1){$('status').textContent='⚠️ 올바른 크기를 입력하세요';return}
+
+  const btn=$('resize-btn'); btn.disabled=true; btn.textContent='처리 중...';
+
+  // Use timeout so UI updates
+  setTimeout(()=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext('2d');
+
+    if(targetFmt==='jpeg'){ctx.fillStyle='#ffffff';ctx.fillRect(0,0,w,h)}
+
+    // High quality downscaling
+    ctx.imageSmoothingEnabled=true;
+    ctx.imageSmoothingQuality='high';
+    ctx.drawImage(origImg,0,0,w,h);
+
+    const mime=targetFmt==='jpeg'?'image/jpeg':targetFmt==='png'?'image/png':'image/webp';
+    const quality=targetFmt==='png'?undefined:parseInt($('q-slider').value)/100;
+    const ext=targetFmt==='jpeg'?'jpg':targetFmt;
+
+    canvas.toBlob(blob=>{
+      if(!blob){$('status').textContent='❌ 변환 실패';btn.disabled=false;btn.textContent='📐 리사이즈';return}
+
+      const url=URL.createObjectURL(blob);
+      const res=$('result');
+      res.innerHTML=`
+        <div class="result-title">✅ 리사이즈 완료</div>
+        <div class="result-stats">${origW}×${origH} → ${w}×${h} · ${fmtBytes(blob.size)}</div>
+        <img src="${url}" class="result-img">
+        <br><a href="${url}" download="resized_${w}x${h}.${ext}" class="btn-download">⬇️ resized_${w}x${h}.${ext} 다운로드</a>
+      `;
+      res.classList.add('show');
+      $('status').textContent='✅ 완료!';
+      btn.disabled=false; btn.textContent='📐 리사이즈';
+    },mime,quality);
+  },50);
+}
+
+function clearAll(){
+  origImg=null; $('preview-section').classList.remove('show');
+  $('options').style.display='none'; $('actions').style.display='none';
+  $('result').classList.remove('show'); $('status').textContent='';
+  $('drop').querySelector('input').value='';
+}
+
+function fmtBytes(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB'}
+
+const drop=$('drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('dragover')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('dragover'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');if(e.dataTransfer.files[0])loadImage(e.dataTransfer.files[0])});
+</script>
+</body>
+</html>

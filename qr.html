@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR 코드 생성 — ToolKit</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0b;--sf:#141416;--sf2:#1c1c20;--bd:#2a2a30;--tx:#e8e8ec;--dim:#8888a0;--ac:#4af0c0;--acd:#4af0c020;--acm:#4af0c040;--red:#ff6b6b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.container{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:13px;margin-bottom:32px;transition:.2s;font-family:'Space Mono',monospace}
+.back:hover{color:var(--ac)}
+header{text-align:center;margin-bottom:48px}
+.logo{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--ac);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.logo::before,.logo::after{content:'';width:24px;height:1px;background:var(--ac);opacity:.4}
+h1{font-size:32px;font-weight:700;margin-bottom:10px}
+header p{color:var(--dim);font-size:15px;line-height:1.6}
+.badge{display:inline-block;margin-top:12px;padding:4px 14px;background:var(--acd);border:1px solid var(--acm);border-radius:20px;font-size:12px;color:var(--ac);font-family:'Space Mono',monospace}
+
+.tabs{display:flex;gap:4px;margin-bottom:32px;background:var(--sf);border-radius:12px;padding:4px;border:1px solid var(--bd)}
+.tab{flex:1;padding:12px 8px;text-align:center;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;transition:.2s;color:var(--dim);border:none;background:0;font-family:inherit}
+.tab:hover{color:var(--tx)}.tab.active{background:var(--ac);color:var(--bg)}
+
+.panel{display:none}.panel.active{display:block}
+
+.input-group{margin-bottom:16px}
+.input-label{font-size:13px;color:var(--dim);margin-bottom:8px;display:block}
+.text-input{width:100%;padding:14px 16px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-family:inherit;font-size:14px;outline:none;transition:.2s;resize:none}
+.text-input:focus{border-color:var(--ac)}
+.text-input::placeholder{color:var(--dim)}
+select.text-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+
+.wifi-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.options-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:24px;margin-top:20px}
+.options-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px}
+
+.color-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.color-item{display:flex;align-items:center;gap:8px}
+.color-item label{font-size:13px;color:var(--dim)}
+.color-item input[type=color]{width:40px;height:36px;border:1px solid var(--bd);border-radius:8px;background:var(--sf2);cursor:pointer;padding:2px}
+
+.size-row{display:flex;gap:12px;align-items:center;margin-top:16px}
+.size-row label{font-size:13px;color:var(--dim);white-space:nowrap}
+.size-row input[type=range]{flex:1;accent-color:var(--ac)}
+.size-row .s-val{font-family:'Space Mono',monospace;font-size:13px;color:var(--ac);min-width:50px}
+
+.action-bar{margin-top:28px;display:flex;gap:12px;align-items:center}
+.btn-primary{flex:1;padding:16px 32px;border:0;border-radius:12px;background:var(--ac);color:var(--bg);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px #4af0c035}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+.result{margin-top:32px;text-align:center;display:none}
+.result.show{display:block}
+.qr-container{display:inline-block;padding:24px;background:#ffffff;border-radius:16px;margin-bottom:20px}
+#qr-canvas{display:block}
+.result-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.btn-download{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;border:0;background:var(--ac);color:var(--bg);font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;text-decoration:none}
+.btn-download:hover{box-shadow:0 4px 16px #4af0c030}
+.btn-sm{padding:10px 20px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:.2s}
+.btn-sm:hover{border-color:var(--ac);color:var(--ac)}
+
+.status-msg{font-size:13px;color:var(--dim);margin-top:12px;min-height:20px;text-align:center}
+footer{text-align:center;margin-top:56px;padding-top:24px;border-top:1px solid var(--bd)}
+footer p{font-size:12px;color:var(--dim);line-height:1.8}
+@media(max-width:600px){h1{font-size:24px}.container{padding:24px 16px 60px}.wifi-row{grid-template-columns:1fr}.tabs{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="index.html" class="back">← 도구 모음으로</a>
+
+<header>
+  <div class="logo">QR Generator</div>
+  <h1>QR 코드 생성</h1>
+  <p>URL, 텍스트, Wi-Fi, 이메일 정보를 QR 코드로 즉시 생성</p>
+  <span class="badge">100% 클라이언트 사이드</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchType('url')">🔗 URL</button>
+  <button class="tab" onclick="switchType('text')">📝 텍스트</button>
+  <button class="tab" onclick="switchType('wifi')">📶 Wi-Fi</button>
+  <button class="tab" onclick="switchType('email')">✉️ 이메일</button>
+</div>
+
+<!-- URL -->
+<div id="url-panel" class="panel active">
+  <div class="input-group">
+    <label class="input-label">URL을 입력하세요</label>
+    <input type="url" class="text-input" id="url-input" placeholder="https://example.com" value="https://">
+  </div>
+</div>
+
+<!-- TEXT -->
+<div id="text-panel" class="panel">
+  <div class="input-group">
+    <label class="input-label">텍스트를 입력하세요</label>
+    <textarea class="text-input" id="text-input" rows="4" placeholder="QR 코드로 변환할 내용을 입력하세요..."></textarea>
+  </div>
+</div>
+
+<!-- WIFI -->
+<div id="wifi-panel" class="panel">
+  <div class="wifi-row">
+    <div class="input-group">
+      <label class="input-label">네트워크 이름 (SSID)</label>
+      <input type="text" class="text-input" id="wifi-ssid" placeholder="MyWiFi">
+    </div>
+    <div class="input-group">
+      <label class="input-label">비밀번호</label>
+      <input type="text" class="text-input" id="wifi-pass" placeholder="비밀번호">
+    </div>
+  </div>
+  <div class="input-group" style="margin-top:4px">
+    <label class="input-label">보안 유형</label>
+    <select class="text-input" id="wifi-enc">
+      <option value="WPA">WPA/WPA2</option>
+      <option value="WEP">WEP</option>
+      <option value="">없음</option>
+    </select>
+  </div>
+</div>
+
+<!-- EMAIL -->
+<div id="email-panel" class="panel">
+  <div class="input-group">
+    <label class="input-label">받는 사람</label>
+    <input type="email" class="text-input" id="email-to" placeholder="email@example.com">
+  </div>
+  <div class="input-group">
+    <label class="input-label">제목</label>
+    <input type="text" class="text-input" id="email-subject" placeholder="이메일 제목">
+  </div>
+  <div class="input-group">
+    <label class="input-label">본문</label>
+    <textarea class="text-input" id="email-body" rows="3" placeholder="이메일 내용..."></textarea>
+  </div>
+</div>
+
+<div class="options-card">
+  <div class="options-title">스타일 설정</div>
+  <div class="color-row">
+    <div class="color-item">
+      <label>QR 색상</label>
+      <input type="color" id="qr-fg" value="#000000">
+    </div>
+    <div class="color-item">
+      <label>배경 색상</label>
+      <input type="color" id="qr-bg" value="#ffffff">
+    </div>
+  </div>
+  <div class="size-row">
+    <label>크기</label>
+    <input type="range" min="128" max="512" value="256" step="16" id="qr-size" oninput="document.getElementById('s-val').textContent=this.value+'px'">
+    <span class="s-val" id="s-val">256px</span>
+  </div>
+</div>
+
+<div class="action-bar">
+  <button class="btn-primary" onclick="generateQR()">🔲 QR 코드 생성</button>
+</div>
+
+<div class="status-msg" id="status"></div>
+
+<div class="result" id="result">
+  <div class="qr-container" id="qr-wrap">
+    <canvas id="qr-canvas"></canvas>
+  </div>
+  <div class="result-actions">
+    <button class="btn-download" onclick="downloadQR('png')">⬇️ PNG 다운로드</button>
+    <button class="btn-sm" onclick="downloadQR('jpg')">JPG</button>
+    <button class="btn-sm" onclick="downloadQR('svg')">SVG</button>
+    <button class="btn-sm" onclick="copyQR()">📋 복사</button>
+  </div>
+</div>
+
+<footer><p>모든 처리는 브라우저에서 이루어집니다 · qrcode.js 기반</p></footer>
+</div>
+
+<script>
+let currentType='url', qrData='';
+function $(id){return document.getElementById(id)}
+
+function switchType(type){
+  currentType=type;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const types=['url','text','wifi','email'];
+  const idx=types.indexOf(type);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  $(type+'-panel').classList.add('active');
+}
+
+function getData(){
+  switch(currentType){
+    case 'url': return $('url-input').value.trim();
+    case 'text': return $('text-input').value.trim();
+    case 'wifi': {
+      const ssid=$('wifi-ssid').value.trim();
+      const pass=$('wifi-pass').value.trim();
+      const enc=$('wifi-enc').value;
+      if(!ssid){return null}
+      return `WIFI:T:${enc};S:${ssid};P:${pass};;`;
+    }
+    case 'email': {
+      const to=$('email-to').value.trim();
+      const subj=$('email-subject').value.trim();
+      const body=$('email-body').value.trim();
+      if(!to)return null;
+      let mailto=`mailto:${to}`;
+      const params=[];
+      if(subj)params.push('subject='+encodeURIComponent(subj));
+      if(body)params.push('body='+encodeURIComponent(body));
+      if(params.length)mailto+='?'+params.join('&');
+      return mailto;
+    }
+  }
+}
+
+function generateQR(){
+  const data=getData();
+  const st=$('status');
+  if(!data){st.textContent='⚠️ 내용을 입력하세요';return}
+  qrData=data;
+
+  const size=parseInt($('qr-size').value);
+  const fg=$('qr-fg').value;
+  const bg=$('qr-bg').value;
+
+  // Draw QR using canvas
+  const canvas=$('qr-canvas');
+  canvas.width=size; canvas.height=size;
+
+  // Create temp div for qrcode.js
+  const tmp=document.createElement('div');
+  try{
+    new QRCode(tmp,{
+      text:data,
+      width:size,
+      height:size,
+      colorDark:fg,
+      colorLight:bg,
+      correctLevel:QRCode.CorrectLevel.M
+    });
+  }catch(e){
+    st.textContent='❌ QR 생성 실패: 내용이 너무 길 수 있습니다';
+    return;
+  }
+
+  // qrcode.js creates an img or canvas in tmp, we need to wait
+  setTimeout(()=>{
+    const srcEl=tmp.querySelector('canvas')||tmp.querySelector('img');
+    if(!srcEl){st.textContent='❌ QR 생성 실패';return}
+
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle=bg;
+    ctx.fillRect(0,0,size,size);
+
+    if(srcEl.tagName==='CANVAS'){
+      ctx.drawImage(srcEl,0,0,size,size);
+      showResult(st);
+    }else{
+      // img - wait for load
+      if(srcEl.complete){
+        ctx.drawImage(srcEl,0,0,size,size);
+        showResult(st);
+      }else{
+        srcEl.onload=()=>{ctx.drawImage(srcEl,0,0,size,size);showResult(st)};
+      }
+    }
+  },100);
+}
+
+function showResult(st){
+  $('result').classList.add('show');
+  $('qr-wrap').style.backgroundColor=$('qr-bg').value;
+  st.textContent='✅ 생성 완료!';
+}
+
+function downloadQR(fmt){
+  const canvas=$('qr-canvas');
+  if(fmt==='svg'){
+    // Generate simple SVG from canvas pixel data
+    const size=canvas.width;
+    const ctx=canvas.getContext('2d');
+    const imgData=ctx.getImageData(0,0,size,size);
+    const bg=$('qr-bg').value;
+    const fg=$('qr-fg').value;
+
+    // Find module size by scanning for color changes
+    let moduleSize=1;
+    for(let x=0;x<size;x++){
+      const i=(x)*4;
+      const r=imgData.data[i];
+      if(x>0){
+        const pr=imgData.data[(x-1)*4];
+        if(Math.abs(r-pr)>100){moduleSize=x;break}
+      }
+    }
+    if(moduleSize<1)moduleSize=1;
+
+    let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`;
+    svg+=`<rect width="${size}" height="${size}" fill="${bg}"/>`;
+
+    // Sample pixels at module centers
+    const modules=Math.round(size/moduleSize);
+    for(let y=0;y<modules;y++){
+      for(let x=0;x<modules;x++){
+        const px=Math.min(Math.floor(x*moduleSize+moduleSize/2),size-1);
+        const py=Math.min(Math.floor(y*moduleSize+moduleSize/2),size-1);
+        const i=(py*size+px)*4;
+        const r=imgData.data[i],g=imgData.data[i+1],b=imgData.data[i+2];
+        // Check if dark
+        if(r<128&&g<128&&b<128||(r+g+b)<384){
+          svg+=`<rect x="${x*moduleSize}" y="${y*moduleSize}" width="${moduleSize}" height="${moduleSize}" fill="${fg}"/>`;
+        }
+      }
+    }
+    svg+=`</svg>`;
+    downloadBlob(new Blob([svg],{type:'image/svg+xml'}),'qrcode.svg');
+  }else{
+    const mime=fmt==='png'?'image/png':'image/jpeg';
+    canvas.toBlob(blob=>{
+      if(blob)downloadBlob(blob,'qrcode.'+fmt);
+    },mime,0.95);
+  }
+}
+
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function copyQR(){
+  try{
+    const canvas=$('qr-canvas');
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+    $('status').textContent='✅ 클립보드에 복사됨!';
+  }catch(e){
+    $('status').textContent='❌ 복사 실패: 브라우저가 지원하지 않을 수 있습니다';
+  }
+}
+
+// Enter key to generate
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)generateQR()});
+</script>
+</body>
+</html>

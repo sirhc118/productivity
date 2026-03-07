@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON ↔ CSV 변환 — ToolKit</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0b;--sf:#141416;--sf2:#1c1c20;--bd:#2a2a30;--tx:#e8e8ec;--dim:#8888a0;--ac:#4af0c0;--acd:#4af0c020;--acm:#4af0c040;--red:#ff6b6b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.container{max-width:960px;margin:0 auto;padding:40px 24px 80px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:13px;margin-bottom:32px;transition:.2s;font-family:'Space Mono',monospace}
+.back:hover{color:var(--ac)}
+header{text-align:center;margin-bottom:48px}
+.logo{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--ac);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.logo::before,.logo::after{content:'';width:24px;height:1px;background:var(--ac);opacity:.4}
+h1{font-size:32px;font-weight:700;margin-bottom:10px}
+header p{color:var(--dim);font-size:15px;line-height:1.6}
+.badge{display:inline-block;margin-top:12px;padding:4px 14px;background:var(--acd);border:1px solid var(--acm);border-radius:20px;font-size:12px;color:var(--ac);font-family:'Space Mono',monospace}
+
+.tabs{display:flex;gap:4px;margin-bottom:32px;background:var(--sf);border-radius:12px;padding:4px;border:1px solid var(--bd)}
+.tab{flex:1;padding:14px;text-align:center;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:.2s;color:var(--dim);border:none;background:0;font-family:inherit}
+.tab:hover{color:var(--tx)}.tab.active{background:var(--ac);color:var(--bg)}
+.panel{display:none}.panel.active{display:block}
+
+.editor-area{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:20px}
+.editor-box{position:relative}
+.editor-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.editor-label .upload-btn{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ac);cursor:pointer;text-transform:none;letter-spacing:0;border:1px solid var(--acm);padding:4px 12px;border-radius:6px;background:var(--acd);position:relative;overflow:hidden}
+.editor-label .upload-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+textarea{width:100%;height:280px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;color:var(--tx);font-family:'Space Mono',monospace;font-size:13px;padding:16px;resize:vertical;line-height:1.6;outline:none;transition:.2s}
+textarea:focus{border-color:var(--ac)}
+textarea::placeholder{color:var(--dim)}
+
+.arrow-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0}
+.btn-convert{padding:14px 32px;border:0;border-radius:12px;background:var(--ac);color:var(--bg);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px}
+.btn-convert:hover{transform:translateY(-1px);box-shadow:0 4px 20px #4af0c035}
+.btn-convert:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.result-area{margin-top:20px}
+.result-box{position:relative}
+.result-box textarea{background:var(--sf2);height:280px}
+.result-actions{display:flex;gap:8px;margin-top:12px}
+.btn-sm{padding:10px 20px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:.2s}
+.btn-sm:hover{border-color:var(--ac);color:var(--ac)}
+.btn-sm.accent{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+.btn-sm.accent:hover{box-shadow:0 2px 12px #4af0c030}
+
+.preview-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px;border-radius:10px;overflow:hidden}
+.preview-table th{background:var(--sf);color:var(--ac);padding:10px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--bd)}
+.preview-table td{padding:8px 14px;border-bottom:1px solid var(--bd);color:var(--tx);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-table tr:hover td{background:var(--sf)}
+.table-wrap{max-height:300px;overflow:auto;border:1px solid var(--bd);border-radius:10px;margin-top:16px}
+
+.status-msg{font-size:13px;color:var(--dim);margin-top:12px;min-height:20px}
+.error-msg{color:var(--red)}
+
+footer{text-align:center;margin-top:56px;padding-top:24px;border-top:1px solid var(--bd)}
+footer p{font-size:12px;color:var(--dim);line-height:1.8}
+@media(max-width:600px){h1{font-size:24px}.container{padding:24px 16px 60px}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="index.html" class="back">← 도구 모음으로</a>
+
+<header>
+  <div class="logo">Data Convert</div>
+  <h1>JSON ↔ CSV 변환</h1>
+  <p>JSON과 CSV를 양방향으로 변환. 미리보기, 복사, 다운로드.</p>
+  <span class="badge">100% 클라이언트 사이드</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('j2c')">JSON → CSV</button>
+  <button class="tab" onclick="switchTab('c2j')">CSV → JSON</button>
+</div>
+
+<!-- JSON to CSV -->
+<div id="j2c-panel" class="panel active">
+  <div class="editor-area">
+    <div class="editor-box">
+      <div class="editor-label">
+        <span>JSON 입력</span>
+        <label class="upload-btn">📁 파일 불러오기<input type="file" accept=".json" onchange="loadFile(this,'j2c-input')"></label>
+      </div>
+      <textarea id="j2c-input" placeholder='[
+  {"name": "홍길동", "age": 30, "city": "서울"},
+  {"name": "김철수", "age": 25, "city": "부산"}
+]'></textarea>
+    </div>
+  </div>
+  <div class="arrow-row">
+    <button class="btn-convert" onclick="jsonToCsv()">🔄 CSV로 변환</button>
+  </div>
+  <div class="status-msg" id="j2c-status"></div>
+  <div class="result-area" id="j2c-result" style="display:none">
+    <div class="result-box">
+      <div class="editor-label"><span>CSV 결과</span></div>
+      <textarea id="j2c-output" readonly></textarea>
+    </div>
+    <div class="result-actions">
+      <button class="btn-sm accent" onclick="downloadText('j2c-output','output.csv','text/csv')">⬇️ 다운로드</button>
+      <button class="btn-sm" onclick="copyText('j2c-output')">📋 복사</button>
+    </div>
+    <div class="table-wrap" id="j2c-preview"></div>
+  </div>
+</div>
+
+<!-- CSV to JSON -->
+<div id="c2j-panel" class="panel">
+  <div class="editor-area">
+    <div class="editor-box">
+      <div class="editor-label">
+        <span>CSV 입력</span>
+        <label class="upload-btn">📁 파일 불러오기<input type="file" accept=".csv,.tsv,.txt" onchange="loadFile(this,'c2j-input')"></label>
+      </div>
+      <textarea id="c2j-input" placeholder='name,age,city
+홍길동,30,서울
+김철수,25,부산'></textarea>
+    </div>
+  </div>
+  <div class="arrow-row">
+    <button class="btn-convert" onclick="csvToJson()">🔄 JSON으로 변환</button>
+  </div>
+  <div class="status-msg" id="c2j-status"></div>
+  <div class="result-area" id="c2j-result" style="display:none">
+    <div class="result-box">
+      <div class="editor-label"><span>JSON 결과</span></div>
+      <textarea id="c2j-output" readonly></textarea>
+    </div>
+    <div class="result-actions">
+      <button class="btn-sm accent" onclick="downloadText('c2j-output','output.json','application/json')">⬇️ 다운로드</button>
+      <button class="btn-sm" onclick="copyText('c2j-output')">📋 복사</button>
+    </div>
+    <div class="table-wrap" id="c2j-preview"></div>
+  </div>
+</div>
+
+<footer><p>모든 처리는 브라우저에서 이루어집니다</p></footer>
+</div>
+
+<script>
+function $(id){return document.getElementById(id)}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((e,i)=>e.classList.toggle('active',i===(t==='j2c'?0:1)));
+  document.querySelectorAll('.panel').forEach((e,i)=>e.classList.toggle('active',i===(t==='j2c'?0:1)));
+}
+
+function loadFile(input,targetId){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>$(targetId).value=e.target.result;
+  reader.readAsText(f);
+}
+
+// === JSON → CSV ===
+function jsonToCsv(){
+  const st=$('j2c-status'),res=$('j2c-result'),out=$('j2c-output'),preview=$('j2c-preview');
+  st.textContent='';st.classList.remove('error-msg');
+
+  try{
+    let data=JSON.parse($('j2c-input').value.trim());
+
+    // Handle nested: if not array, try to find array in values
+    if(!Array.isArray(data)){
+      const vals=Object.values(data);
+      const arr=vals.find(v=>Array.isArray(v));
+      if(arr)data=arr;
+      else data=[data];
+    }
+
+    if(!data.length){st.textContent='빈 배열입니다';st.classList.add('error-msg');return}
+
+    // Collect all keys
+    const keys=[...new Set(data.flatMap(obj=>Object.keys(obj)))];
+
+    // Build CSV
+    const escape=v=>{
+      if(v===null||v===undefined)return '';
+      const s=typeof v==='object'?JSON.stringify(v):String(v);
+      return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;
+    };
+
+    const lines=[keys.join(',')];
+    data.forEach(row=>{
+      lines.push(keys.map(k=>escape(row[k])).join(','));
+    });
+
+    const csv=lines.join('\n');
+    out.value=csv;
+    res.style.display='block';
+    st.textContent=`✅ ${data.length}행 × ${keys.length}열 변환 완료`;
+
+    // Table preview
+    let html='<table class="preview-table"><thead><tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr></thead><tbody>';
+    data.slice(0,50).forEach(row=>{
+      html+='<tr>'+keys.map(k=>`<td>${esc(row[k]??'')}</td>`).join('')+'</tr>';
+    });
+    if(data.length>50)html+='<tr><td colspan="'+keys.length+'" style="color:var(--dim);text-align:center">... 외 '+(data.length-50)+'행</td></tr>';
+    html+='</tbody></table>';
+    preview.innerHTML=html;
+
+  }catch(e){
+    st.textContent='❌ JSON 파싱 오류: '+e.message;
+    st.classList.add('error-msg');
+  }
+}
+
+// === CSV → JSON ===
+function csvToJson(){
+  const st=$('c2j-status'),res=$('c2j-result'),out=$('c2j-output'),preview=$('c2j-preview');
+  st.textContent='';st.classList.remove('error-msg');
+
+  try{
+    const raw=$('c2j-input').value.trim();
+    if(!raw){st.textContent='CSV를 입력하세요';st.classList.add('error-msg');return}
+
+    const rows=parseCSV(raw);
+    if(rows.length<2){st.textContent='헤더와 최소 1행이 필요합니다';st.classList.add('error-msg');return}
+
+    const headers=rows[0];
+    const data=[];
+
+    for(let i=1;i<rows.length;i++){
+      if(rows[i].length===1&&rows[i][0]==='')continue; // skip empty
+      const obj={};
+      headers.forEach((h,j)=>{
+        let val=rows[i][j]??'';
+        // Auto-detect numbers
+        if(val!==''&&!isNaN(val)&&val.trim()!=='')val=Number(val);
+        else if(val==='true')val=true;
+        else if(val==='false')val=false;
+        else if(val==='null')val=null;
+        obj[h]=val;
+      });
+      data.push(obj);
+    }
+
+    const json=JSON.stringify(data,null,2);
+    out.value=json;
+    res.style.display='block';
+    st.textContent=`✅ ${data.length}행 × ${headers.length}열 변환 완료`;
+
+    // Table preview
+    let html='<table class="preview-table"><thead><tr>'+headers.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr></thead><tbody>';
+    data.slice(0,50).forEach(row=>{
+      html+='<tr>'+headers.map(k=>`<td>${esc(row[k]??'')}</td>`).join('')+'</tr>';
+    });
+    if(data.length>50)html+='<tr><td colspan="'+headers.length+'" style="color:var(--dim);text-align:center">... 외 '+(data.length-50)+'행</td></tr>';
+    html+='</tbody></table>';
+    preview.innerHTML=html;
+
+  }catch(e){
+    st.textContent='❌ CSV 파싱 오류: '+e.message;
+    st.classList.add('error-msg');
+  }
+}
+
+// Proper CSV parser (handles quotes, commas in values)
+function parseCSV(text){
+  const rows=[];let row=[];let cell='';let inQuote=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuote){
+      if(c==='"'){
+        if(text[i+1]==='"'){cell+='"';i++}
+        else inQuote=false;
+      }else cell+=c;
+    }else{
+      if(c==='"')inQuote=true;
+      else if(c===','){row.push(cell);cell=''}
+      else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}
+      else if(c==='\r'){/* skip */}
+      else cell+=c;
+    }
+  }
+  row.push(cell);if(row.length>0)rows.push(row);
+  return rows;
+}
+
+function esc(v){const s=String(v);return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function copyText(id){
+  navigator.clipboard.writeText($(id).value).then(()=>{
+    const btn=event.target;btn.textContent='✅ 복사됨';setTimeout(()=>btn.textContent='📋 복사',1500);
+  });
+}
+
+function downloadText(id,filename,mime){
+  const blob=new Blob([$(id).value],{type:mime+';charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

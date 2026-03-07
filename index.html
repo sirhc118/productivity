@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ToolKit — 무료 생산성 도구 모음</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0b;--sf:#141416;--sf2:#1c1c20;--bd:#2a2a30;--tx:#e8e8ec;--dim:#8888a0;--ac:#4af0c0;--acd:#4af0c015;--acm:#4af0c040}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.grain{position:fixed;inset:0;pointer-events:none;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.container{position:relative;max-width:960px;margin:0 auto;padding:60px 24px 80px}
+
+header{text-align:center;margin-bottom:64px}
+.logo{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:5px;text-transform:uppercase;color:var(--ac);margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px}
+.logo::before,.logo::after{content:'';width:32px;height:1px;background:var(--ac);opacity:.4}
+h1{font-size:40px;font-weight:700;letter-spacing:-1px;margin-bottom:14px}
+h1 span{color:var(--ac)}
+header p{color:var(--dim);font-size:16px;line-height:1.7;max-width:480px;margin:0 auto}
+.badges{display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.badge{padding:5px 14px;background:var(--acd);border:1px solid var(--acm);border-radius:20px;font-size:11px;color:var(--ac);font-family:'Space Mono',monospace}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:48px}
+
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:32px 28px;cursor:pointer;transition:all .3s ease;text-decoration:none;color:var(--tx);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac);transform:scaleX(0);transition:transform .3s ease;transform-origin:left}
+.card:hover{border-color:var(--acm);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.card:hover::before{transform:scaleX(1)}
+
+.card-icon{font-size:40px;margin-bottom:16px;display:block}
+.card-title{font-size:18px;font-weight:700;margin-bottom:8px}
+.card-desc{font-size:13px;color:var(--dim);line-height:1.7}
+.card-tags{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+.card-tag{padding:3px 10px;background:var(--sf2);border-radius:6px;font-size:11px;color:var(--dim);font-family:'Space Mono',monospace}
+
+.card-soon{opacity:.5;pointer-events:none}
+.card-soon .card-badge{position:absolute;top:16px;right:16px;padding:3px 10px;background:#ffd93d20;border:1px solid #ffd93d40;border-radius:6px;font-size:10px;color:#ffd93d;font-family:'Space Mono',monospace}
+
+.section-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:20px;padding-left:4px}
+
+footer{text-align:center;padding-top:32px;border-top:1px solid var(--bd)}
+footer p{font-size:12px;color:var(--dim);line-height:2}
+footer a{color:var(--ac);text-decoration:none}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.card{animation:fadeUp .5s ease both}
+.card:nth-child(2){animation-delay:.08s}
+.card:nth-child(3){animation-delay:.16s}
+.card:nth-child(4){animation-delay:.24s}
+.card:nth-child(5){animation-delay:.32s}
+.card:nth-child(6){animation-delay:.4s}
+
+@media(max-width:600px){
+  h1{font-size:28px}
+  .container{padding:40px 16px 60px}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="container">
+
+<header>
+  <div class="logo">ToolKit</div>
+  <h1>무료 <span>생산성 도구</span> 모음</h1>
+  <p>회원가입 없이, 서버 전송 없이, 브라우저에서 바로 처리.<br>모든 파일은 당신의 컴퓨터에서만 처리됩니다.</p>
+  <div class="badges">
+    <span class="badge">100% 클라이언트 사이드</span>
+    <span class="badge">서버 전송 없음</span>
+    <span class="badge">완전 무료</span>
+  </div>
+</header>
+
+<div class="section-label">사용 가능한 도구</div>
+<div class="grid">
+
+  <a href="pdf.html" class="card">
+    <span class="card-icon">📄</span>
+    <div class="card-title">PDF 합치기 & 압축</div>
+    <div class="card-desc">여러 PDF를 하나로 합치거나 용량을 대폭 줄일 수 있습니다. 드래그로 순서 변경 가능.</div>
+    <div class="card-tags">
+      <span class="card-tag">합치기</span>
+      <span class="card-tag">압축</span>
+      <span class="card-tag">JPEG 변환</span>
+    </div>
+  </a>
+
+  <a href="image.html" class="card">
+    <span class="card-icon">🖼️</span>
+    <div class="card-title">이미지 변환</div>
+    <div class="card-desc">JPG, PNG, WebP 간 자유로운 포맷 변환. 여러 파일 일괄 변환 지원.</div>
+    <div class="card-tags">
+      <span class="card-tag">JPG</span>
+      <span class="card-tag">PNG</span>
+      <span class="card-tag">WebP</span>
+      <span class="card-tag">일괄 변환</span>
+    </div>
+  </a>
+
+  <a href="data.html" class="card">
+    <span class="card-icon">🔄</span>
+    <div class="card-title">JSON ↔ CSV 변환</div>
+    <div class="card-desc">JSON과 CSV 형식을 양방향으로 변환. 미리보기와 즉시 다운로드.</div>
+    <div class="card-tags">
+      <span class="card-tag">JSON</span>
+      <span class="card-tag">CSV</span>
+      <span class="card-tag">양방향</span>
+    </div>
+  </a>
+
+  <a href="#" class="card card-soon">
+    <span class="card-badge">COMING SOON</span>
+    <span class="card-icon">📐</span>
+    <div class="card-title">이미지 리사이즈</div>
+    <div class="card-desc">이미지 크기 조절, 크롭, 비율 변경을 브라우저에서 바로.</div>
+    <div class="card-tags"><span class="card-tag">리사이즈</span><span class="card-tag">크롭</span></div>
+  </a>
+
+  <a href="#" class="card card-soon">
+    <span class="card-badge">COMING SOON</span>
+    <span class="card-icon">🔲</span>
+    <div class="card-title">QR 코드 생성</div>
+    <div class="card-desc">URL, 텍스트, Wi-Fi 정보 등을 QR 코드로 즉시 생성.</div>
+    <div class="card-tags"><span class="card-tag">QR</span><span class="card-tag">PNG 저장</span></div>
+  </a>
+
+  <a href="#" class="card card-soon">
+    <span class="card-badge">COMING SOON</span>
+    <span class="card-icon">🔐</span>
+    <div class="card-title">Base64 인코더</div>
+    <div class="card-desc">텍스트, 이미지를 Base64로 인코딩/디코딩.</div>
+    <div class="card-tags"><span class="card-tag">인코딩</span><span class="card-tag">디코딩</span></div>
+  </a>
+
+</div>
+
+<footer>
+  <p>모든 처리는 브라우저에서 이루어집니다 · 파일은 서버로 전송되지 않습니다<br>
+  <a href="https://github.com/sirhc118/pdf-toolkit">GitHub</a></p>
+</footer>
+
+</div>
+</body>
+</html>

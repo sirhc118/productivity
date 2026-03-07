@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF 합치기 & 압축 — ToolKit</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0b;--sf:#141416;--sf2:#1c1c20;--bd:#2a2a30;--tx:#e8e8ec;--dim:#8888a0;--ac:#4af0c0;--acd:#4af0c020;--acm:#4af0c040;--red:#ff6b6b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.container{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:13px;margin-bottom:32px;transition:.2s;font-family:'Space Mono',monospace}
+.back:hover{color:var(--ac)}
+header{text-align:center;margin-bottom:48px}
+.logo{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--ac);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.logo::before,.logo::after{content:'';width:24px;height:1px;background:var(--ac);opacity:.4}
+h1{font-size:32px;font-weight:700;margin-bottom:10px}
+header p{color:var(--dim);font-size:15px;line-height:1.6}
+.badge{display:inline-block;margin-top:12px;padding:4px 14px;background:var(--acd);border:1px solid var(--acm);border-radius:20px;font-size:12px;color:var(--ac);font-family:'Space Mono',monospace}
+.tabs{display:flex;gap:4px;margin-bottom:32px;background:var(--sf);border-radius:12px;padding:4px;border:1px solid var(--bd)}
+.tab{flex:1;padding:14px;text-align:center;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:.2s;color:var(--dim);border:none;background:0;font-family:inherit}
+.tab:hover{color:var(--tx)}.tab.active{background:var(--ac);color:var(--bg);box-shadow:0 2px 12px #4af0c030}
+.panel{display:none}.panel.active{display:block}
+.dropzone{border:2px dashed var(--bd);border-radius:16px;padding:48px 32px;text-align:center;cursor:pointer;transition:.25s;position:relative;background:var(--sf)}
+.dropzone:hover,.dropzone.dragover{border-color:var(--ac);background:var(--acd)}
+.dropzone-icon{font-size:48px;margin-bottom:16px;display:block}
+.dropzone-text{font-size:15px;color:var(--dim);line-height:1.7}
+.dropzone-text strong{color:var(--ac)}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.file-list{margin-top:20px}
+.file-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--sf2);border-radius:10px;margin-bottom:8px;border:1px solid var(--bd);cursor:grab;transition:.15s}
+.file-item:hover{background:var(--sf)}.file-item.drag-over{border-color:var(--ac)}
+.file-icon{font-size:28px;flex-shrink:0}
+.file-info{flex:1;min-width:0}
+.file-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:12px;color:var(--dim);margin-top:2px}
+.file-remove{background:0;border:0;color:var(--dim);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;transition:.15s}
+.file-remove:hover{color:var(--red);background:#ff6b6b15}
+.drag-handle{color:var(--dim);font-size:16px;cursor:grab;user-select:none;padding:4px}
+.options-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:24px;margin-top:20px}
+.options-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px}
+.quality-options{display:flex;gap:8px;flex-wrap:wrap}
+.quality-btn{padding:10px 20px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:.2s}
+.quality-btn:hover{border-color:var(--ac)}
+.quality-btn.active{background:var(--acd);border-color:var(--ac);color:var(--ac)}
+.quality-desc{font-size:12px;color:var(--dim);margin-top:12px;line-height:1.6}
+.action-bar{margin-top:28px;display:flex;gap:12px;align-items:center}
+.btn-primary{flex:1;padding:16px 32px;border:0;border-radius:12px;background:var(--ac);color:var(--bg);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px #4af0c035}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-clear{padding:16px 20px;border:1px solid var(--bd);border-radius:12px;background:0;color:var(--dim);cursor:pointer;font-size:14px;font-family:inherit;transition:.2s}
+.btn-clear:hover{border-color:var(--red);color:var(--red)}
+.progress-bar{width:100%;height:6px;background:var(--sf2);border-radius:3px;margin-top:20px;overflow:hidden;display:none}
+.progress-bar.active{display:block}
+.progress-fill{height:100%;background:var(--ac);border-radius:3px;transition:width .3s;width:0}
+.result{margin-top:24px;padding:20px;background:#4af0c010;border:1px solid var(--acm);border-radius:14px;display:none}
+.result.show{display:block}
+.result-title{font-weight:700;font-size:15px;margin-bottom:4px}
+.result-stats{font-size:13px;color:var(--dim);margin-bottom:14px;line-height:1.6}
+.btn-download{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;border:0;background:var(--ac);color:var(--bg);font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;text-decoration:none}
+.status-msg{font-size:13px;color:var(--dim);margin-top:12px;min-height:20px}
+.note{margin-top:16px;padding:14px 18px;background:#ffd93d10;border:1px solid #ffd93d30;border-radius:10px;font-size:12px;color:#ffd93d;line-height:1.7}
+footer{text-align:center;margin-top:56px;padding-top:24px;border-top:1px solid var(--bd)}
+footer p{font-size:12px;color:var(--dim);line-height:1.8}
+@media(max-width:600px){h1{font-size:24px}.container{padding:24px 16px 60px}.quality-options{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="index.html" class="back">← 도구 모음으로</a>
+
+<header>
+  <div class="logo">PDF Tools</div>
+  <h1>PDF 합치기 & 용량 줄이기</h1>
+  <p>여러 PDF를 합치거나 용량을 대폭 줄이세요</p>
+  <span class="badge">100% 클라이언트 사이드</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('merge')">📎 합치기</button>
+  <button class="tab" onclick="switchTab('compress')">📦 용량 줄이기</button>
+</div>
+
+<div id="merge-panel" class="panel active">
+  <div class="dropzone" id="merge-drop">
+    <span class="dropzone-icon">📄</span>
+    <div class="dropzone-text">PDF 파일을 드래그하거나 <strong>클릭하여 선택</strong> (여러 파일)</div>
+    <input type="file" accept=".pdf" multiple onchange="addMergeFiles(this.files)">
+  </div>
+  <div class="file-list" id="merge-list"></div>
+  <div class="status-msg" id="merge-status"></div>
+  <div class="action-bar" id="merge-actions" style="display:none">
+    <button class="btn-primary" onclick="doMerge()" id="merge-btn">📎 PDF 합치기</button>
+    <button class="btn-clear" onclick="clearMerge()">초기화</button>
+  </div>
+  <div class="progress-bar" id="merge-prog"><div class="progress-fill" id="merge-fill"></div></div>
+  <div class="result" id="merge-result"></div>
+</div>
+
+<div id="compress-panel" class="panel">
+  <div class="dropzone" id="compress-drop">
+    <span class="dropzone-icon">📄</span>
+    <div class="dropzone-text">용량을 줄일 PDF를 <strong>클릭하여 선택</strong></div>
+    <input type="file" accept=".pdf" onchange="setCompressFile(this.files)">
+  </div>
+  <div class="file-list" id="compress-list"></div>
+  <div class="options-card" id="compress-opts" style="display:none">
+    <div class="options-title">압축 수준</div>
+    <div class="quality-options">
+      <button class="quality-btn" onclick="pickQ(this,'low')">🟢 가벼운</button>
+      <button class="quality-btn active" onclick="pickQ(this,'medium')">🟡 보통</button>
+      <button class="quality-btn" onclick="pickQ(this,'high')">🔴 최대</button>
+    </div>
+    <div class="quality-desc" id="q-desc">1.5배 해상도, JPEG 70%. 균형 잡힌 압축</div>
+    <div class="note">⚠️ 각 페이지를 이미지로 변환 후 재조립합니다. 텍스트 선택/검색이 불가능해질 수 있습니다.</div>
+  </div>
+  <div class="status-msg" id="compress-status"></div>
+  <div class="action-bar" id="compress-actions" style="display:none">
+    <button class="btn-primary" onclick="doCompress()" id="compress-btn">📦 용량 줄이기</button>
+    <button class="btn-clear" onclick="clearCompress()">초기화</button>
+  </div>
+  <div class="progress-bar" id="compress-prog"><div class="progress-fill" id="compress-fill"></div></div>
+  <div class="result" id="compress-result"></div>
+</div>
+
+<footer><p>모든 처리는 브라우저에서 이루어집니다 · pdf-lib + pdf.js</p></footer>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const{PDFDocument}=PDFLib;
+let mergeFiles=[],cFile=null,cQuality='medium',dragIdx=null;
+const Q={low:{scale:2,jpeg:.85,desc:'2배 해상도, JPEG 85%. 품질 우선'},medium:{scale:1.5,jpeg:.70,desc:'1.5배 해상도, JPEG 70%. 균형 잡힌 압축'},high:{scale:1,jpeg:.45,desc:'1배 해상도, JPEG 45%. 최대 압축'}};
+function fmt(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB'}
+function switchTab(t){document.querySelectorAll('.tab').forEach((e,i)=>e.classList.toggle('active',i===(t==='merge'?0:1)));document.querySelectorAll('.panel').forEach((e,i)=>e.classList.toggle('active',i===(t==='merge'?0:1)))}
+function $(id){return document.getElementById(id)}
+
+function addMergeFiles(fl){for(const f of fl)if(f.type==='application/pdf')mergeFiles.push(f);renderMerge()}
+function renderMerge(){const l=$('merge-list'),a=$('merge-actions'),s=$('merge-status');if(!mergeFiles.length){l.innerHTML='';a.style.display='none';s.textContent='';return}a.style.display='flex';s.textContent=mergeFiles.length+'개 파일 · 드래그로 순서 변경';l.innerHTML=mergeFiles.map((f,i)=>`<div class="file-item" draggable="true" ondragstart="dragIdx=${i};this.style.opacity=.5" ondragend="this.style.opacity=1" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');if(dragIdx!==null&&dragIdx!==${i}){mergeFiles.splice(${i},0,mergeFiles.splice(dragIdx,1)[0]);renderMerge()}dragIdx=null"><span class="drag-handle">⠿</span><span class="file-icon">📄</span><div class="file-info"><div class="file-name">${f.name}</div><div class="file-size">${fmt(f.size)}</div></div><button class="file-remove" onclick="mergeFiles.splice(${i},1);renderMerge()">✕</button></div>`).join('')}
+function clearMerge(){mergeFiles=[];renderMerge();$('merge-result').classList.remove('show');$('merge-drop').querySelector('input').value=''}
+
+async function doMerge(){if(mergeFiles.length<2){$('merge-status').textContent='⚠️ 2개 이상 선택하세요';return}const btn=$('merge-btn'),bar=$('merge-prog'),fill=$('merge-fill'),st=$('merge-status');btn.disabled=true;btn.textContent='처리 중...';bar.classList.add('active');fill.style.width='0%';try{const out=await PDFDocument.create();for(let i=0;i<mergeFiles.length;i++){st.textContent=`${i+1}/${mergeFiles.length} 처리 중...`;const d=await PDFDocument.load(await mergeFiles[i].arrayBuffer(),{ignoreEncryption:true});(await out.copyPages(d,d.getPageIndices())).forEach(p=>out.addPage(p));fill.style.width=((i+1)/mergeFiles.length*90)+'%'}const bytes=await out.save();fill.style.width='100%';const tot=mergeFiles.reduce((s,f)=>s+f.size,0);showResult('merge-result',bytes,'merged.pdf',`${mergeFiles.length}개 합침 · ${fmt(tot)} → ${fmt(bytes.length)}`);st.textContent='✅ 완료!'}catch(e){st.textContent='❌ '+e.message}btn.disabled=false;btn.innerHTML='📎 PDF 합치기';setTimeout(()=>bar.classList.remove('active'),1000)}
+
+function setCompressFile(fl){if(fl[0]?.type==='application/pdf'){cFile=fl[0];renderCompress()}}
+function renderCompress(){const l=$('compress-list'),a=$('compress-actions'),o=$('compress-opts');if(!cFile){l.innerHTML='';a.style.display='none';o.style.display='none';return}a.style.display='flex';o.style.display='block';l.innerHTML=`<div class="file-item"><span class="file-icon">📄</span><div class="file-info"><div class="file-name">${cFile.name}</div><div class="file-size">${fmt(cFile.size)}</div></div><button class="file-remove" onclick="clearCompress()">✕</button></div>`}
+function clearCompress(){cFile=null;renderCompress();$('compress-result').classList.remove('show');$('compress-drop').querySelector('input').value='';$('compress-status').textContent=''}
+function pickQ(btn,q){cQuality=q;document.querySelectorAll('.quality-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');$('q-desc').textContent=Q[q].desc}
+
+async function doCompress(){if(!cFile)return;const btn=$('compress-btn'),bar=$('compress-prog'),fill=$('compress-fill'),st=$('compress-status');btn.disabled=true;btn.textContent='처리 중...';bar.classList.add('active');fill.style.width='5%';st.textContent='PDF 로딩 중...';try{const origBytes=await cFile.arrayBuffer();const origSize=origBytes.byteLength;const preset=Q[cQuality];const pdfJs=await pdfjsLib.getDocument({data:new Uint8Array(origBytes)}).promise;const total=pdfJs.numPages;st.textContent=total+'페이지 처리 시작...';fill.style.width='10%';const newPdf=await PDFDocument.create();const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');for(let i=1;i<=total;i++){st.textContent=`${i}/${total} 페이지 렌더링...`;const page=await pdfJs.getPage(i);const vp=page.getViewport({scale:preset.scale});canvas.width=vp.width;canvas.height=vp.height;ctx.fillStyle='#fff';ctx.fillRect(0,0,vp.width,vp.height);await page.render({canvasContext:ctx,viewport:vp}).promise;const jpegUrl=canvas.toDataURL('image/jpeg',preset.jpeg);const raw=atob(jpegUrl.split(',')[1]);const arr=new Uint8Array(raw.length);for(let j=0;j<raw.length;j++)arr[j]=raw.charCodeAt(j);const img=await newPdf.embedJpg(arr);const orig1=page.getViewport({scale:1});const np=newPdf.addPage([orig1.width,orig1.height]);np.drawImage(img,{x:0,y:0,width:orig1.width,height:orig1.height});fill.style.width=(10+((i/total)*85))+'%'}st.textContent='저장 중...';fill.style.width='98%';const out=await newPdf.save();fill.style.width='100%';const pct=((1-out.length/origSize)*100).toFixed(1);showResult('compress-result',out,'compressed_'+cFile.name,pct>0?`🎉 ${pct}% 감소! ${fmt(origSize)} → ${fmt(out.length)}`:`이미 최적화된 파일 (${fmt(out.length)})`);st.textContent='✅ 완료!'}catch(e){st.textContent='❌ '+e.message}btn.disabled=false;btn.innerHTML='📦 용량 줄이기';setTimeout(()=>bar.classList.remove('active'),1000)}
+
+function showResult(id,bytes,name,stats){const el=$(id),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);el.innerHTML=`<div class="result-title">✅ 처리 완료</div><div class="result-stats">${stats}</div><a href="${url}" download="${name}" class="btn-download">⬇️ ${name} 다운로드</a>`;el.classList.add('show')}
+
+['merge-drop','compress-drop'].forEach(id=>{const el=$(id);el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover')});el.addEventListener('dragleave',()=>el.classList.remove('dragover'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('dragover');id==='merge-drop'?addMergeFiles(e.dataTransfer.files):setCompressFile(e.dataTransfer.files)})});
+</script>
+</body>
+</html>

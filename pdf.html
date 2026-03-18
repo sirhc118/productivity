@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF 합치기 & 압축 — ToolKit</title>
+<title>PDF 합치기 & 압축 & 페이지 삭제 — ToolKit</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -65,7 +65,18 @@ header p{color:var(--dim);font-size:15px;line-height:1.6}
 .note{margin-top:16px;padding:14px 18px;background:#ffd93d10;border:1px solid #ffd93d30;border-radius:10px;font-size:12px;color:#ffd93d;line-height:1.7}
 footer{text-align:center;margin-top:56px;padding-top:24px;border-top:1px solid var(--bd)}
 footer p{font-size:12px;color:var(--dim);line-height:1.8}
-@media(max-width:600px){h1{font-size:24px}.container{padding:24px 16px 60px}.quality-options{flex-direction:column}}
+.page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:14px}
+.page-thumb{position:relative;border-radius:10px;border:2px solid var(--bd);overflow:hidden;cursor:pointer;transition:.2s;aspect-ratio:3/4;background:var(--sf2)}
+.page-thumb:hover{border-color:var(--ac)}
+.page-thumb.selected{border-color:var(--red);box-shadow:0 0 0 2px #ff6b6b40}
+.page-thumb.selected::after{content:'✕';position:absolute;top:6px;right:6px;width:22px;height:22px;background:var(--red);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.page-thumb canvas{width:100%;height:100%;object-fit:contain;display:block}
+.page-num{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:11px;padding:4px;background:rgba(0,0,0,.7);color:var(--tx);font-family:'Space Mono',monospace}
+.page-select-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.page-select-info{font-size:13px;color:var(--dim)}
+.btn-select-toggle{padding:6px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--dim);cursor:pointer;font-size:12px;font-family:inherit;transition:.2s}
+.btn-select-toggle:hover{border-color:var(--ac);color:var(--ac)}
+@media(max-width:600px){h1{font-size:24px}.container{padding:24px 16px 60px}.quality-options{flex-direction:column}.page-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}}
 </style>
 </head>
 <body>
@@ -75,14 +86,15 @@ footer p{font-size:12px;color:var(--dim);line-height:1.8}
 
 <header>
   <div class="logo">PDF Tools</div>
-  <h1>PDF 합치기 & 용량 줄이기</h1>
-  <p>여러 PDF를 합치거나 용량을 대폭 줄이세요</p>
+  <h1>PDF 합치기 & 압축 & 페이지 삭제</h1>
+  <p>여러 PDF를 합치거나, 용량을 줄이거나, 원하는 페이지를 삭제하세요</p>
   <span class="badge">100% 클라이언트 사이드</span>
 </header>
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('merge')">📎 합치기</button>
   <button class="tab" onclick="switchTab('compress')">📦 용량 줄이기</button>
+  <button class="tab" onclick="switchTab('delete')">✂️ 페이지 삭제</button>
 </div>
 
 <div id="merge-panel" class="panel active">
@@ -127,16 +139,43 @@ footer p{font-size:12px;color:var(--dim);line-height:1.8}
   <div class="result" id="compress-result"></div>
 </div>
 
+<div id="delete-panel" class="panel">
+  <div class="dropzone" id="delete-drop">
+    <span class="dropzone-icon">📄</span>
+    <div class="dropzone-text">페이지를 삭제할 PDF를 <strong>클릭하여 선택</strong></div>
+    <input type="file" accept=".pdf" onchange="setDeleteFile(this.files)">
+  </div>
+  <div class="file-list" id="delete-file-info"></div>
+  <div class="page-grid-wrap" id="delete-grid-wrap" style="display:none">
+    <div class="options-card">
+      <div class="options-title">페이지 선택</div>
+      <div class="page-select-bar">
+        <span class="page-select-info" id="delete-select-info">삭제할 페이지를 클릭하세요</span>
+        <button class="btn-select-toggle" id="btn-select-all" onclick="toggleSelectAll()">전체 선택</button>
+      </div>
+      <div class="page-grid" id="delete-grid"></div>
+    </div>
+  </div>
+  <div class="status-msg" id="delete-status"></div>
+  <div class="action-bar" id="delete-actions" style="display:none">
+    <button class="btn-primary" onclick="doDelete()" id="delete-btn">✂️ 선택 페이지 삭제</button>
+    <button class="btn-clear" onclick="clearDelete()">초기화</button>
+  </div>
+  <div class="progress-bar" id="delete-prog"><div class="progress-fill" id="delete-fill"></div></div>
+  <div class="result" id="delete-result"></div>
+</div>
+
 <footer><p>모든 처리는 브라우저에서 이루어집니다 · pdf-lib + pdf.js</p></footer>
 </div>
 
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 const{PDFDocument}=PDFLib;
-let mergeFiles=[],cFile=null,cQuality='medium',dragIdx=null;
+let mergeFiles=[],cFile=null,cQuality='medium',dragIdx=null,dFile=null,dPages=new Set(),dTotal=0;
 const Q={low:{scale:2,jpeg:.85,desc:'2배 해상도, JPEG 85%. 품질 우선'},medium:{scale:1.5,jpeg:.70,desc:'1.5배 해상도, JPEG 70%. 균형 잡힌 압축'},high:{scale:1,jpeg:.45,desc:'1배 해상도, JPEG 45%. 최대 압축'}};
+const TAB_MAP={merge:0,compress:1,delete:2};
 function fmt(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB'}
-function switchTab(t){document.querySelectorAll('.tab').forEach((e,i)=>e.classList.toggle('active',i===(t==='merge'?0:1)));document.querySelectorAll('.panel').forEach((e,i)=>e.classList.toggle('active',i===(t==='merge'?0:1)))}
+function switchTab(t){const idx=TAB_MAP[t]??0;document.querySelectorAll('.tab').forEach((e,i)=>e.classList.toggle('active',i===idx));document.querySelectorAll('.panel').forEach((e,i)=>e.classList.toggle('active',i===idx))}
 function $(id){return document.getElementById(id)}
 
 function addMergeFiles(fl){for(const f of fl)if(f.type==='application/pdf')mergeFiles.push(f);renderMerge()}
@@ -154,7 +193,16 @@ async function doCompress(){if(!cFile)return;const btn=$('compress-btn'),bar=$('
 
 function showResult(id,bytes,name,stats){const el=$(id),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);el.innerHTML=`<div class="result-title">✅ 처리 완료</div><div class="result-stats">${stats}</div><a href="${url}" download="${name}" class="btn-download">⬇️ ${name} 다운로드</a>`;el.classList.add('show')}
 
-['merge-drop','compress-drop'].forEach(id=>{const el=$(id);el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover')});el.addEventListener('dragleave',()=>el.classList.remove('dragover'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('dragover');id==='merge-drop'?addMergeFiles(e.dataTransfer.files):setCompressFile(e.dataTransfer.files)})});
+// === 페이지 삭제 ===
+async function setDeleteFile(fl){if(!fl[0]||fl[0].type!=='application/pdf')return;dFile=fl[0];dPages=new Set();$('delete-file-info').innerHTML=`<div class="file-item"><span class="file-icon">📄</span><div class="file-info"><div class="file-name">${dFile.name}</div><div class="file-size">${fmt(dFile.size)}</div></div><button class="file-remove" onclick="clearDelete()">✕</button></div>`;$('delete-status').textContent='썸네일 생성 중...';$('delete-grid-wrap').style.display='block';$('delete-actions').style.display='flex';await renderDeleteThumbs()}
+async function renderDeleteThumbs(){const grid=$('delete-grid');grid.innerHTML='';try{const data=await dFile.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:new Uint8Array(data)}).promise;dTotal=pdf.numPages;for(let i=1;i<=dTotal;i++){const page=await pdf.getPage(i);const vp=page.getViewport({scale:.5});const canvas=document.createElement('canvas');canvas.width=vp.width;canvas.height=vp.height;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,vp.width,vp.height);await page.render({canvasContext:ctx,viewport:vp}).promise;const thumb=document.createElement('div');thumb.className='page-thumb';thumb.dataset.page=i;thumb.onclick=()=>togglePage(thumb,i);thumb.appendChild(canvas);const num=document.createElement('div');num.className='page-num';num.textContent=i+' / '+dTotal;thumb.appendChild(num);grid.appendChild(thumb)}$('delete-status').textContent='';updateDeleteInfo()}catch(e){$('delete-status').textContent='❌ '+e.message}}
+function togglePage(el,pg){if(dPages.has(pg)){dPages.delete(pg);el.classList.remove('selected')}else{if(dPages.size>=dTotal-1){$('delete-status').textContent='⚠️ 최소 1페이지는 남겨야 합니다';return}dPages.add(pg);el.classList.add('selected')}$('delete-status').textContent='';updateDeleteInfo()}
+function updateDeleteInfo(){const info=$('delete-select-info');const btn=$('delete-btn');if(dPages.size===0){info.textContent='삭제할 페이지를 클릭하세요';btn.disabled=true}else{info.textContent=`${dPages.size}개 페이지 선택됨 (${dTotal-dPages.size}개 유지)`;btn.disabled=false}}
+function toggleSelectAll(){const thumbs=document.querySelectorAll('.page-thumb');if(dPages.size===dTotal-1){dPages.clear();thumbs.forEach(t=>t.classList.remove('selected'))}else{dPages.clear();thumbs.forEach((t,i)=>{if(i<dTotal-1){dPages.add(i+1);t.classList.add('selected')}else{t.classList.remove('selected')}})};updateDeleteInfo()}
+function clearDelete(){dFile=null;dPages=new Set();dTotal=0;$('delete-file-info').innerHTML='';$('delete-grid').innerHTML='';$('delete-grid-wrap').style.display='none';$('delete-actions').style.display='none';$('delete-result').classList.remove('show');$('delete-status').textContent='';$('delete-drop').querySelector('input').value=''}
+async function doDelete(){if(!dFile||dPages.size===0)return;const btn=$('delete-btn'),bar=$('delete-prog'),fill=$('delete-fill'),st=$('delete-status');btn.disabled=true;btn.textContent='처리 중...';bar.classList.add('active');fill.style.width='10%';try{const src=await PDFDocument.load(await dFile.arrayBuffer(),{ignoreEncryption:true});const keep=src.getPageIndices().filter(i=>!dPages.has(i+1));fill.style.width='30%';st.textContent='새 PDF 생성 중...';const out=await PDFDocument.create();const pages=await out.copyPages(src,keep);pages.forEach(p=>out.addPage(p));fill.style.width='80%';const bytes=await out.save();fill.style.width='100%';showResult('delete-result',bytes,'edited_'+dFile.name,`${dPages.size}페이지 삭제 · ${dTotal}→${keep.length}페이지 · ${fmt(dFile.size)} → ${fmt(bytes.length)}`);st.textContent='✅ 완료!'}catch(e){st.textContent='❌ '+e.message}btn.disabled=false;btn.innerHTML='✂️ 선택 페이지 삭제';setTimeout(()=>bar.classList.remove('active'),1000)}
+
+['merge-drop','compress-drop','delete-drop'].forEach(id=>{const el=$(id);el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover')});el.addEventListener('dragleave',()=>el.classList.remove('dragover'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('dragover');if(id==='merge-drop')addMergeFiles(e.dataTransfer.files);else if(id==='compress-drop')setCompressFile(e.dataTransfer.files);else setDeleteFile(e.dataTransfer.files)})});
 </script>
 </body>
 </html>
